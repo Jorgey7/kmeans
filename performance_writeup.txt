@@ -1,0 +1,9 @@
+Zach Jorgensen
+
+The kmeans algorithm runs in much less time than that of the k nearest neighbor algorithm. However, kmeans accuracy
+results are random, whereas the accuracy results of k nearest neighbor are consistent. On top of this, k nearest
+neighbor accuracy is significantly higher than even the high end of the random accuracy of the kmeans implementation.
+
+The submitted k nearest neighbor implementation has an accuracy that places in the middle fo the pack compared to the
+classifiers and tokenizers that were tested in the paper. This is approximately what was expected due to the choice
+of tokenization and baselining in this implementation. 

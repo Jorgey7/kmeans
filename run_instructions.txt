@@ -1,0 +1,2 @@
+1) pip install the requirements.txt file
+2) execute the k_nearest_neighbor.py file with python3
