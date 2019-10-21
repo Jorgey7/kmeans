@@ -1,0 +1,11 @@
+Zach Jorgensen
+
+The neural network performs exceedingly well on all data sets. With a split of
+80% training data and 20% testing data, the neural network is able to achieve 
+accuracy in the high 90's. The network also runs quite quickly. The speed is 
+on par with kmeans and much faster than k_nearest_neighbor. The accurracy 
+achieved is also either on par or much better than that achieved by kmeans. 
+The iris dataset accuracy is only slightly better than kmeans, but the wine 
+dataset is much more accurate. The sms dataset accuracy is also improved 
+significantly. The neural network has shown to be a significantly better in 
+all aspects when compared to previous clustering algorithms. 

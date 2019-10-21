@@ -1,10 +1,12 @@
 from __future__ import division, print_function, unicode_literals
 
 import getopt
+import hashlib
 import sys
 import os
 import numpy
 import pandas
+import nltk
 
 import tensorflow as tf
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -19,9 +21,11 @@ tf.keras.backend.clear_session()
 
 def create_model(correct_labels, data_matrix, epochs):
     model = tf.keras.models.Sequential([tf.keras.layers.Dense(128, input_dim=len(data_matrix[0]), activation='relu'),
-                                        tf.keras.layers.Dropout(.2),
-                                        tf.keras.layers.Dense(64, activation='relu'),
-                                        tf.keras.layers.Dense(len(correct_labels), activation='sigmoid')])
+                                        tf.keras.layers.Dense(200, activation='softmax'),
+                                        tf.keras.layers.Dense(256, input_dim=len(data_matrix[0]), activation='relu'),
+                                        tf.keras.layers.Dense(128, activation='softmax'),
+                                        tf.keras.layers.Dense(64, input_dim=len(data_matrix[0]), activation='relu'),
+                                        tf.keras.layers.Dense(len(correct_labels[0]), activation='sigmoid')])
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     training_size = int(len(data_matrix) * .8)
@@ -38,9 +42,9 @@ def create_model(correct_labels, data_matrix, epochs):
 
 
 def import_sms(filename):
-    # nltk.download('wordnet')
-    # nltk.download('stopwords')
-    # nltk.download('averaged_perceptron_tagger')
+    nltk.download('wordnet')
+    nltk.download('stopwords')
+    nltk.download('averaged_perceptron_tagger')
 
     k = 2
     lemmatizer = WordNetLemmatizer()
@@ -65,7 +69,11 @@ def import_sms(filename):
             lemmatized_output = ' '.join([lemmatizer.lemmatize(w, tag_dict.get(tag[0], wordnet.wordnet.NOUN))
                                           for w, tag in pos_tag(tokens)])
             all_text.append(lemmatized_output)
-            labels.append(split_text[0])
+            if split_text[0] == 'ham':
+                int_rep = 0
+            else:
+                int_rep = 1
+            labels.append(int_rep)
 
     vectorizer = TfidfVectorizer()
     vectors = vectorizer.fit_transform(all_text)
@@ -73,7 +81,7 @@ def import_sms(filename):
     better_vectors = pandas.DataFrame(vectors.toarray().transpose(), index=vectorizer.get_feature_names())
     better_vectors = better_vectors.transpose()
 
-    numpy_labels = numpy.array(labels, order='K', dtype='str')
+    numpy_labels = numpy.array(labels, dtype=int)
     data = numpy.array(better_vectors, dtype=float)
     return numpy_labels, data
 
@@ -81,9 +89,15 @@ def import_sms(filename):
 def create_matrix_csv(filename, group_col):
     matrix = numpy.genfromtxt(filename, delimiter=',', dtype=str)
     labels = numpy.array(matrix[:, [group_col]]).flatten()
+    int_labels = numpy.zeros_like(labels)
+    for i in range(0, len(labels)):
+        temp_str = str(labels[i])
+        int_rep = int(hashlib.md5(temp_str.encode('utf-8')).hexdigest(), 16)
+        int_labels[i] = (int_rep % 10 ** 2)
+
     data_matrix = numpy.delete(matrix, [group_col], axis=1).astype(float, order='K')
     print(labels.dtype)
-    return labels, data_matrix
+    return int_labels, data_matrix
 
 
 def main(argv):
@@ -91,16 +105,15 @@ def main(argv):
     group_col = 0
     file_type = ""
     epochs = 10
-    k_value = -1
 
     try:
         opts, args = getopt.getopt(argv, "hi:g:k:t:")
     except getopt.GetoptError:
-        print('kmeans -i <inputfile> -g <column of group in csv data> -t <type (sms or csv)>')
+        print('project3 -i <inputfile> -g <column of group in csv data> -t <type (sms or csv)>')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print('kmeans -i <inputfile> -g <column of group in csv data> -t <type (sms or '
+            print('project3 -i <inputfile> -g <column of group in csv data> -t <type (sms or '
                   'csv)>')
             sys.exit()
         elif opt == '-i':
@@ -108,30 +121,18 @@ def main(argv):
             assert(os.path.exists(inputfile))
         elif opt == '-g':
             group_col = int(arg)
-        elif opt == '-k':
-            k_value = int(arg)
         elif opt == '-t':
             file_type = arg
 
     if file_type == "csv":
         (correct_labels, data_matrix) = create_matrix_csv(filename=inputfile, group_col=group_col)
-        print(type(correct_labels))
-        print(correct_labels.shape)
-        print(type(data_matrix))
-        print(data_matrix.shape)
     elif file_type == "sms":
         (correct_labels, data_matrix) = import_sms(filename=inputfile)
-        # correct_labels = numpy.array(correct_labels_temp)
-        print(type(correct_labels))
-        print(type(data_matrix))
-        print(correct_labels.shape)
-        print(data_matrix.shape)
     else:
         sys.exit(-1)
 
-    # correct_labels =
-    if k_value != -1:
-        results = create_model(correct_labels, data_matrix, epochs, k_value)
+    processed_labels = tf.keras.utils.to_categorical(correct_labels)
+    results = create_model(processed_labels, data_matrix, epochs)
     print(results)
 
 

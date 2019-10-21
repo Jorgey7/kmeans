@@ -1,0 +1,5 @@
+1) pip install the requirements.txt file
+2) execute the project3_NN.py file with the following command line arguments
+    iris: `-i data/iris/iris.data -g 4 -t csv`
+    wine: `-i data/wine/wine.data -g 0 -t csv`
+    sms: `-i data/smsspamcollection/SMSSpamCollection -t sms`
